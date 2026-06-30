@@ -277,8 +277,8 @@ export default function App() {
   const [muted, setMuted] = useState(false)
   const audioRef = useRef(null)
   const bgRef = useRef(null)
-  const BG_VOL = 0.16   // volumen normal de la música
-  const BG_DUCK = 0.05  // volumen mientras habla la mamá
+  const BG_VOL = 1.0    // el archivo ya viene muy suave (en iPhone el volumen JS se ignora)
+  const BG_DUCK = 0.45  // baja aún más mientras habla la mamá (solo en escritorio)
 
   useEffect(() => {
     const a = new Audio()
