@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: #0b1026;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Quicksand', ui-sans-serif, system-ui, sans-serif;
+}
+::-webkit-scrollbar { width: 0; }
+
+.ff-title { font-family: 'Cinzel Decorative', Georgia, serif; letter-spacing: .01em; }
+.ff-label { font-family: 'Cinzel', Georgia, serif; }
+.ff-body  { font-family: 'Quicksand', ui-sans-serif, system-ui, sans-serif; }
+
+@keyframes twinkle { 0%,100%{opacity:.15} 50%{opacity:1} }
+@keyframes floatUp { 0%{transform:translateY(0)} 100%{transform:translateY(-18px)} }
+@keyframes fadeUp { 0%{opacity:0;transform:translateY(24px)} 100%{opacity:1;transform:translateY(0)} }
+@keyframes popIn { 0%{opacity:0;transform:scale(.6)} 60%{transform:scale(1.06)} 100%{opacity:1;transform:scale(1)} }
+@keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+@keyframes pulseGlow { 0%,100%{box-shadow:0 0 22px rgba(255,214,120,.45)} 50%{box-shadow:0 0 46px rgba(255,214,120,.85)} }
+@keyframes sway { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(2deg)} }
+
+.fade-up { animation: fadeUp .7s ease both; }
+.pop-in { animation: popIn .6s cubic-bezier(.18,.9,.34,1.4) both; }
+.gold-text {
+  background: linear-gradient(100deg,#f6d365,#fff2b8,#e9a93a,#fff7d6,#f6c14b);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 4s linear infinite;
+}
