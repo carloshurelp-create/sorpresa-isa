@@ -4,15 +4,17 @@ import confetti from 'canvas-confetti'
 /* === MEDIOS REALES (carpeta /public/media) === */
 const BASE = '/media/'
 const STORY = [
-  { type: 'photo', src: BASE + 'foto-abrazo.jpg',
+  { type: 'photo', src: BASE + 'foto-abrazo.jpg', audio: BASE + 'voz1.mp3',
     text: 'Desde que llegaste a mi vida, cada momento a tu lado ha sido mi recuerdo favorito...' },
-  { type: 'photo', src: BASE + 'foto-castillo.jpg',
-    text: '...ver al mundo a través de tus ojos llenos de magia e ilusión es el regalo más grande.' },
-  { type: 'photo', src: BASE + 'foto-dragon.jpg',
+  { type: 'photo', src: BASE + 'foto-castillo.jpg', audio: BASE + 'voz2.mp3',
+    text: '...ver el mundo a través de tus ojos es el regalo más grande.' },
+  { type: 'photo', src: BASE + 'foto-dragon.jpg', audio: BASE + 'voz3.mp3',
     text: 'Amo compartir contigo las cosas más sencillas y las aventuras más locas.' },
-  { type: 'video', src: BASE + 'video1.mp4',
-    text: 'Porque no importa cuántos años pasen, siempre seremos el mejor equipo del mundo.' },
+  { type: 'video', src: BASE + 'video1.mp4', audio: BASE + 'voz4.mp3',
+    text: 'Porque no importa cuántos años pasen, siempre seremos tú y yo contra el mundo.' },
 ]
+const VOZ_SCRATCH = BASE + 'voz5.mp3'
+const VOZ_REVEAL = BASE + 'voz6.mp3'
 const GALLERY = [
   { type: 'photo', src: BASE + 'foto-hollywood.jpg' },
   { type: 'video', src: BASE + 'video2.mp4' },
@@ -58,9 +60,13 @@ function MediaFrame({ item }) {
 }
 
 /* === FASE 1: Recorrido nostálgico === */
-function PhaseStory({ onDone }) {
+function PhaseStory({ onDone, playAudio }) {
   const [i, setI] = useState(0)
   const last = i === STORY.length - 1
+  const next = () => {
+    if (last) { playAudio(VOZ_SCRATCH); onDone() }
+    else { const n = i + 1; setI(n); playAudio(STORY[n].audio) }
+  }
   return (
     <div className="relative min-h-full flex flex-col items-center px-6 py-8">
       <Starfield />
@@ -81,7 +87,7 @@ function PhaseStory({ onDone }) {
               style={{ width: d === i ? 28 : 8, background: d === i ? '#f6d365' : 'rgba(255,255,255,.3)' }} />
           ))}
         </div>
-        <button onClick={() => (last ? onDone() : setI(i + 1))}
+        <button onClick={next}
           className="ff-body w-full py-4 rounded-full text-base font-semibold text-[#3a2a00] active:scale-95 transition"
           style={{ background: 'linear-gradient(100deg,#ffe08a,#f6c14b)', animation: 'pulseGlow 2.6s ease-in-out infinite' }}>
           {last ? 'Continuar  →' : 'Siguiente  →'}
@@ -92,7 +98,7 @@ function PhaseStory({ onDone }) {
 }
 
 /* === FASE 2: Rasca y gana === */
-function PhaseScratch({ onReveal }) {
+function PhaseScratch({ onReveal, playAudio }) {
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const drawing = useRef(false)
@@ -172,7 +178,7 @@ function PhaseScratch({ onReveal }) {
           )}
         </div>
 
-        <button disabled={!revealed} onClick={onReveal}
+        <button disabled={!revealed} onClick={() => { playAudio(VOZ_REVEAL); onReveal() }}
           className={'ff-body w-full py-4 rounded-full text-base font-bold transition active:scale-95 ' + (revealed ? 'text-[#3a2a00]' : 'text-white/40')}
           style={revealed
             ? { background: 'linear-gradient(100deg,#ffe08a,#f6c14b)', animation: 'pulseGlow 2s ease-in-out infinite' }
@@ -239,18 +245,98 @@ function PhaseReveal() {
   )
 }
 
-/* === App: máquina de estados de las 3 fases === */
+/* === FASE 0: Portada de inicio (desbloquea el sonido) === */
+function PhaseIntro({ onStart }) {
+  return (
+    <div className="relative min-h-full flex flex-col items-center justify-center px-6 py-12 text-center">
+      <Starfield />
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center gap-6">
+        <p className="ff-label text-pink-200/80 tracking-[0.3em] text-xs uppercase fade-up">Para mi Isa</p>
+        <h1 className="ff-title gold-text font-black leading-tight fade-up" style={{ fontSize: '2.6rem' }}>
+          Nuestra Aventura
+        </h1>
+        <div className="text-4xl pop-in" style={{ animation: 'floatUp 2s ease-in-out infinite alternate' }}>💛✨</div>
+        <p className="ff-body fade-up text-white/85 text-base leading-relaxed">
+          Tu mamá te preparó algo muy especial, con su propia voz.
+          <span className="block mt-1 text-pink-200">Sube el volumen y tócame 🔊</span>
+        </p>
+        <button onClick={onStart}
+          className="ff-body mt-2 px-10 py-4 rounded-full text-lg font-bold text-[#3a2a00] active:scale-95 transition"
+          style={{ background: 'linear-gradient(100deg,#ffe08a,#f6c14b)', animation: 'pulseGlow 2.2s ease-in-out infinite' }}>
+          Toca para comenzar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* === App: máquina de estados de las fases === */
 export default function App() {
-  const [phase, setPhase] = useState(1) // 1 story · 2 scratch · 3 reveal
+  const [phase, setPhase] = useState(0) // 0 intro · 1 story · 2 scratch · 3 reveal
   const [fading, setFading] = useState(false)
+  const [muted, setMuted] = useState(false)
+  const audioRef = useRef(null)
+  const bgRef = useRef(null)
+  const BG_VOL = 0.16   // volumen normal de la música
+  const BG_DUCK = 0.05  // volumen mientras habla la mamá
+
+  useEffect(() => {
+    const a = new Audio()
+    a.preload = 'auto'
+    audioRef.current = a
+    const restore = () => { if (bgRef.current) bgRef.current.volume = BG_VOL }
+    a.addEventListener('ended', restore)
+
+    const b = new Audio(BASE + 'bg-music.mp3')
+    b.loop = true
+    b.preload = 'auto'
+    b.volume = BG_VOL
+    bgRef.current = b
+
+    return () => { a.pause(); b.pause(); a.removeEventListener('ended', restore) }
+  }, [])
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted
+    if (bgRef.current) bgRef.current.muted = muted
+  }, [muted])
+
+  const playAudio = (src) => {
+    const a = audioRef.current
+    if (!a) return
+    if (bgRef.current) bgRef.current.volume = BG_DUCK // baja la música bajo la voz
+    try {
+      a.pause()
+      a.src = src
+      a.currentTime = 0
+      a.muted = muted
+      const p = a.play()
+      if (p && p.catch) p.catch(() => {})
+    } catch (e) { /* noop */ }
+  }
+
   const go = (n) => {
     setFading(true)
     setTimeout(() => { setPhase(n); setFading(false); window.scrollTo(0, 0) }, 450)
   }
+  const start = () => {
+    const b = bgRef.current
+    if (b) { b.muted = muted; const p = b.play(); if (p && p.catch) p.catch(() => {}) }
+    playAudio(STORY[0].audio)
+    go(1)
+  }
+
   return (
     <div className={'min-h-full transition-opacity duration-500 ' + (fading ? 'opacity-0' : 'opacity-100')}>
-      {phase === 1 && <PhaseStory onDone={() => go(2)} />}
-      {phase === 2 && <PhaseScratch onReveal={() => go(3)} />}
+      {phase !== 0 && (
+        <button onClick={() => setMuted((m) => !m)} aria-label="Silenciar"
+          className="fixed top-4 right-4 z-50 w-11 h-11 rounded-full flex items-center justify-center text-lg backdrop-blur active:scale-90 transition"
+          style={{ background: 'rgba(0,0,0,.35)', border: '1px solid rgba(255,255,255,.25)' }}>
+          {muted ? '🔇' : '🔊'}
+        </button>
+      )}
+      {phase === 0 && <PhaseIntro onStart={start} />}
+      {phase === 1 && <PhaseStory onDone={() => go(2)} playAudio={playAudio} />}
+      {phase === 2 && <PhaseScratch onReveal={() => go(3)} playAudio={playAudio} />}
       {phase === 3 && <PhaseReveal />}
     </div>
   )
